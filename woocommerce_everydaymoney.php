@@ -5,7 +5,7 @@
  * Description: Accepts payments with EverydayMoney.App
  * Author:      EverydayMoney.App
  * Author URI:  https://everydaymoney.app/
- * Version:     1.0
+ * Version:     0.1
  */
 
 add_filter(
