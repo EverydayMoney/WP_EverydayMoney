@@ -6,7 +6,26 @@
  * Author:      EverydayMoney.App
  * Author URI:  https://everydaymoney.app/
  * Version:     0.1
+ * WC requires at least: 3.0
+ * WC tested up to: 8.0.2
  */
+
+// Hook to run when the admin menu is being set up
+add_action('admin_menu', 'everydaymoney_admin_menu');
+
+function everydaymoney_admin_menu() {
+    // Check if WooCommerce is active
+    if (class_exists('WC_Payment_Gateway')) {
+        // Add your admin menu page or do other plugin setup here
+    } else {
+        add_action('admin_notices', 'everydaymoney_plugin_admin_notice');
+    }
+}
+
+function everydaymoney_plugin_admin_notice() {
+    echo '<div class="notice notice-error"><p>EverydayMoney Plugin requires WooCommerce to be installed and activated.</p></div>';
+}
+
 
 add_filter(
     "woocommerce_payment_gateways",
@@ -26,7 +45,7 @@ function wc_everydaymoney_init()
     //     return;
     // }
 
-    if (!class_exists("WC_EverydayMoney")) {
+    if (!class_exists("WC_EverydayMoney") && class_exists('WooCommerce')) {
         class WC_EverydayMoney extends WC_Payment_Gateway
         {
             public function __construct()
@@ -377,6 +396,7 @@ function wc_everydaymoney_init()
     }
 }
 
+
 add_action('admin_menu', 'everydaymoney_reports_menu');
 
 function everydaymoney_reports_menu() {
@@ -465,12 +485,18 @@ function everydaymoney_fetch_sales_reports($publicKey, $secretKey, $testMode, $t
 
 
 function everydaymoney_reports_page() {
-    $gateway = new WC_EverydayMoney(); // Create an instance of the gateway class
-    $sales_data = everydaymoney_fetch_sales_reports($gateway->publicKey, $gateway->secretKey, $gateway->testmode, 10);
     ?>
     <div class="wrap">
         <h2>EverydayMoney Reports</h2>
         <p>This page displays reports fetched from EverydayMoney.</p>
+    <?php
+    if (!class_exists("WC_EverydayMoney") || !class_exists("WC_Payment_Gateway")){
+        echo '<div class="notice notice-error"><p>EverydayMoney and WooCommerce is required.</p></div>';
+        return;
+    }
+    $gateway = new WC_EverydayMoney(); // Create an instance of the gateway class
+    $sales_data = everydaymoney_fetch_sales_reports($gateway->publicKey, $gateway->secretKey, $gateway->testmode, 10);
+    ?>
         <?php if(is_array($sales_data)){ ?>
         <table id="sales-table" class="display" style="width:100%">
             <thead>
