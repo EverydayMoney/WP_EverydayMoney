@@ -13,6 +13,57 @@
 // Hook to run when the admin menu is being set up
 add_action('admin_menu', 'everydaymoney_admin_menu');
 
+add_action("woocommerce_api_everydaymoney_payment_webhook", "everydaymoney_payment_webhook");
+
+function everydaymoney_payment_webhook() {
+    header("HTTP/1.1 200 OK");
+
+    // Get the incoming POST data
+    $request_body = file_get_contents("php://input");
+    $request_data = json_decode($request_body, true);
+
+    // Verify the transactionRef against the external API
+    $transactionRef = $request_data["transactionRef"];
+    $gateway = new WC_EverydayMoney();
+    if ($gateway->testmode == "yes") {
+        $chargeUrl =
+            "https://em-api-staging.logicaladdress.com/payment/business/charge";
+    } else {
+        // TODO: Set Production URL
+        $chargeUrl =
+            "https://em-api-staging.logicaladdress.com/payment/business/charge";
+    }
+    $verification_response = wp_remote_get(
+        $chargeUrl . "?transactionRef=" . $transactionRef
+    );
+    if (!is_wp_error($verification_response)) {
+        $verification_body = json_decode(wp_remote_retrieve_body($verification_response), true);
+
+        if (!$verification_body["isError"] && $verification_body["result"]["status"] === "success") {
+            // Transaction is verified, update the order status or perform any necessary actions
+            $order_id = wc_get_order_id_by_order_key(
+                $verification_body["result"]["referenceKey"]
+            );
+            $order = wc_get_order($order_id);
+
+            $order_status = $order->get_status();
+            // Update order status, complete the payment, etc.
+            if($order_status == 'pending'){
+                $order->payment_complete();
+                // Add a note to the order
+                $order->add_order_note("Payment completed via EverydayMoney. Transaction Ref: {$transactionRef}");
+                // Send order completion email to the customer
+                $order->send_order_completed_email();
+            }
+            // Send a success response to the webhook
+            wp_send_json(["status" => "success"]);
+        }
+    }
+
+    // If verification fails or there's an error, send an error response
+    wp_send_json(["status" => "error"]);
+}
+
 function everydaymoney_admin_menu() {
     // Check if WooCommerce is active
     if (class_exists('WC_Payment_Gateway')) {
@@ -71,6 +122,7 @@ function wc_everydaymoney_init()
                 $this->emailRequired = $this->get_option("emailRequired");
                 $this->phoneRequired = $this->get_option("phoneRequired");
                 $this->redirectUrl = $this->get_option("redirectUrl");
+                $this->webhookUrl = $this->get_option("webhookUrl");
 
                 $this->description = $this->get_option("description");
                 $this->enabled = $this->get_option("enabled");
@@ -165,7 +217,14 @@ function wc_everydaymoney_init()
                         "type" => "text",
                         "description" => "We will redirect here when payment is successful",
                         "default" => get_option('siteurl')."/wc-api/everydaymoney_payment",
+                        "disabled" => true,
                         "desc_tip" => true,
+                    ],
+                    "webhookUrl" => [
+                        "title" => "Webhook Endpoint URL",
+                        "type" => "text",
+                        "default" => get_site_url() . "/wc-api/everydaymoney_payment_webhook",
+                        "disabled" => true,
                     ],
                 ];
             }
@@ -249,6 +308,7 @@ function wc_everydaymoney_init()
                     "wallet" => "default",
                     "inclusive" => true,
                     "redirectUrl" => $this->redirectUrl,
+                    "webhookUrl" => $this->webhookUrl,
                 ];
 
                 if ($this->phoneRequired != "no" && $data["billing"]["phone"]) {
