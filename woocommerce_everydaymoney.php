@@ -33,6 +33,7 @@ function everydaymoney_payment_webhook() {
         $chargeUrl =
             "https://em-api-staging.logicaladdress.com/payment/business/charge";
     }
+    // TODO: Set PublicKey in Header
     $verification_response = wp_remote_get(
         $chargeUrl . "?transactionRef=" . $transactionRef
     );
@@ -405,6 +406,8 @@ function wc_everydaymoney_init()
                             );
                             $order = wc_get_order($order_id);
                             $order->payment_complete();
+                            $order->add_order_note("Payment completed via EverydayMoney. Transaction Ref: {$transactionRef}");
+                            $order->send_order_completed_email();
                             wc_empty_cart();
                             wc_add_notice(
                                 "Your payment is received!",
