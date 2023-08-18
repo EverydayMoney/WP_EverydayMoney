@@ -29,9 +29,8 @@ function everydaymoney_payment_webhook() {
         $chargeUrl =
             "https://em-api-staging.logicaladdress.com/payment/business/charge";
     } else {
-        // TODO: Set Production URL
         $chargeUrl =
-            "https://em-api-staging.logicaladdress.com/payment/business/charge";
+            "https://em-api-prod.everydaymoney.app/payment/business/charge";
     }
     // TODO: Set PublicKey in Header
     $verification_response = wp_remote_get(
@@ -285,12 +284,13 @@ function wc_everydaymoney_init()
                 $order = wc_get_order($order_id);
                 $data = $order->get_data();
                 if ($this->testmode == "yes") {
+                    // TODO: Set it to cloudfront.net or its alias
                     $redirectUrl =
                         "https://em-api-staging.logicaladdress.com/public/index.html?transactionRef=";
                 } else {
-                    // TODO: Set Production URL
+                    // TODO: Set it to cloudfront.net or its alias
                     $redirectUrl =
-                        "https://em-api-staging.logicaladdress.com/public/index.html?transactionRef=";
+                        "https://em-api-prod.everydaymoney.app/public/index.html?transactionRef=";
                 }
 
                 /*
@@ -329,9 +329,8 @@ function wc_everydaymoney_init()
                     $chargeUrl =
                         "https://em-api-staging.logicaladdress.com/payment/business/charge";
                 } else {
-                    // TODO: Set Production URL
                     $chargeUrl =
-                        "https://em-api-staging.logicaladdress.com/payment/business/charge";
+                        "https://em-api-prod.everydaymoney.app/payment/business/charge";
                 }
                 $response = wp_remote_post($chargeUrl, [
                     "headers" => ["Content-type" => "application/json"],
@@ -383,9 +382,8 @@ function wc_everydaymoney_init()
                     $chargeUrl =
                         "https://em-api-staging.logicaladdress.com/payment/business/charge";
                 } else {
-                    // TODO: Set Production URL
                     $chargeUrl =
-                        "https://em-api-staging.logicaladdress.com/payment/business/charge";
+                        "https://em-api-prod.everydaymoney.app/payment/business/charge";
                 }
                 $response = wp_remote_get(
                     $chargeUrl . "?transactionRef=" . $transactionRef
@@ -488,7 +486,7 @@ function everydaymoney_fetch_sales_reports($publicKey, $secretKey, $testMode, $t
     if($testMode === "yes"){
         $baseEndpoint = "https://em-api-staging.logicaladdress.com";
     }else{
-        $baseEndpoint = "https://em-api-staging.logicaladdress.com";
+        $baseEndpoint = "https://em-api-prod.everydaymoney.app";
     }
 
     $tokenResponse = wp_remote_request(
