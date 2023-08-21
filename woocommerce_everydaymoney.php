@@ -54,7 +54,7 @@ function everydaymoney_payment_webhook() {
                 $order->add_order_note("Payment completed via EverydayMoney. Transaction Ref: {$transactionRef}");
                 // Send order completion email to the customer
                 try {
-                    $order->send_order_completed_email();
+                    // $order->send_order_completed_email();
                 } catch (Exception $e) {
                     // Log the error message
                     error_log('Error sending order completion email: ' . $e->getMessage());
@@ -414,7 +414,7 @@ function wc_everydaymoney_init()
                                 $order->payment_complete();
                                 $order->add_order_note("Payment completed via EverydayMoney. Transaction Ref: {$transactionRef}");
                                 try {
-                                    $order->send_order_completed_email();
+                                    // $order->send_order_completed_email();
                                 } catch (Exception $e) {
                                     // Log the error message
                                     error_log('Error sending order completion email: ' . $e->getMessage());
