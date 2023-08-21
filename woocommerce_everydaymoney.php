@@ -53,7 +53,13 @@ function everydaymoney_payment_webhook() {
                 // Add a note to the order
                 $order->add_order_note("Payment completed via EverydayMoney. Transaction Ref: {$transactionRef}");
                 // Send order completion email to the customer
-                $order->send_order_completed_email();
+                try {
+                    $order->send_order_completed_email();
+                } catch (Exception $e) {
+                    // Log the error message
+                    error_log('Error sending order completion email: ' . $e->getMessage());
+                    // You can also add additional error-handling logic here
+                }
             }
             // Send a success response to the webhook
             wp_send_json(["status" => "success"]);
@@ -284,9 +290,8 @@ function wc_everydaymoney_init()
                 $order = wc_get_order($order_id);
                 $data = $order->get_data();
                 if ($this->testmode == "yes") {
-                    // TODO: Set it to cloudfront.net or its alias
                     $redirectUrl =
-                        "https://dtu039g57sbfd.cloudfront.net?transactionRef=";
+                        "https://dtu039g57sbfd.cloudfront.net?methods=bank_transfer&transactionRef=";
                 } else {
                     // TODO: Set it to cloudfront.net or its alias
                     $redirectUrl =
@@ -403,9 +408,19 @@ function wc_everydaymoney_init()
                                 $body["result"]["referenceKey"]
                             );
                             $order = wc_get_order($order_id);
-                            $order->payment_complete();
-                            $order->add_order_note("Payment completed via EverydayMoney. Transaction Ref: {$transactionRef}");
-                            $order->send_order_completed_email();
+                            $order_status = $order->get_status();
+                            // Update order status, complete the payment, etc.
+                            if($order_status == 'pending'){
+                                $order->payment_complete();
+                                $order->add_order_note("Payment completed via EverydayMoney. Transaction Ref: {$transactionRef}");
+                                try {
+                                    $order->send_order_completed_email();
+                                } catch (Exception $e) {
+                                    // Log the error message
+                                    error_log('Error sending order completion email: ' . $e->getMessage());
+                                    // You can also add additional error-handling logic here
+                                }
+                            }
                             wc_empty_cart();
                             wc_add_notice(
                                 "Your payment is received!",
