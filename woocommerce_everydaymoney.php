@@ -286,7 +286,7 @@ function wc_everydaymoney_init()
                 if ($this->testmode == "yes") {
                     // TODO: Set it to cloudfront.net or its alias
                     $redirectUrl =
-                        "https://em-api-staging.logicaladdress.com/public/index.html?transactionRef=";
+                        "https://dtu039g57sbfd.cloudfront.net?transactionRef=";
                 } else {
                     // TODO: Set it to cloudfront.net or its alias
                     $redirectUrl =
