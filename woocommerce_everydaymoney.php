@@ -303,7 +303,7 @@ function wc_everydaymoney_init()
                  */
                 $args = [
                     "publicKey" => $this->publicKey,
-                    "payerName" =>
+                    "customerName" =>
                         $data["billing"]["first_name"] .
                         " " .
                         $data["billing"]["last_name"],
@@ -532,7 +532,7 @@ function everydaymoney_fetch_sales_reports($publicKey, $secretKey, $testMode, $t
     }
 
     $response = wp_remote_request(
-        "${baseEndpoint}/payment/business/transaction-history?order=DESC&page=1&take=${take}",
+        "${baseEndpoint}/payment/business/charge-history?order=DESC&page=1&take=${take}",
         array(
             'method'      => 'POST',
             'headers'     => array(
@@ -572,15 +572,18 @@ function everydaymoney_reports_page() {
     }
     $gateway = new WC_EverydayMoney(); // Create an instance of the gateway class
     $sales_data = everydaymoney_fetch_sales_reports($gateway->publicKey, $gateway->secretKey, $gateway->testmode, 10);
+    // die(var_dump($sales_data[0]->customer));
     ?>
         <?php if(is_array($sales_data)){ ?>
         <table id="sales-table" class="display" style="width:100%">
             <thead>
                 <tr>
                     <th>Customer</th>
+                    <th>Name</th>
                     <th>Transaction Ref</th>
                     <th>Amount</th>
                     <th>Status</th>
+                    <th>Type</th>
                     <th>Paid Date</th>
                     <th>Paid Time</th>
                     <!-- Add more columns as needed -->
@@ -589,10 +592,12 @@ function everydaymoney_reports_page() {
             <tbody>
                 <?php foreach ($sales_data as $sale) : ?>
                     <tr>
-                        <td><?php echo $sale->charge->customer ? $sale->charge->customer->customerKey : "N/A"; ?></td>
-                        <td><?php echo $sale->charge->transactionRef; ?></td>
-                        <td><?php echo number_format($sale->amount / 100, 2); ?></td>
-                        <td><?php echo strtoupper($sale->charge->status); ?></td>
+                        <td><?php echo $sale->customer ? $sale->customer->customerKey : "N/A"; ?></td>
+                        <td><?php echo $sale->customer && $sale->customer->name != null ? $sale->customer->name : "N/A"; ?></td>
+                        <td><?php echo $sale->transactionRef; ?></td>
+                        <td><?php echo $sale->chargesIsInclusive ? number_format($sale->amount / 100, 2) : number_format( ($sale->amount + $sale->serviceCharge + $sale->businessCommission)  / 100, 2); ?></td>
+                        <td><?php echo strtoupper($sale->status); ?></td>
+                        <td><?php echo strtoupper($sale->chargeType); ?></td>
                         <td><?php echo $sale->paidAtDate; ?></td>
                         <td><?php echo $sale->paidAtTime; ?></td>
                     </tr>
