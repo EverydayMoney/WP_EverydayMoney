@@ -129,6 +129,7 @@ function wc_everydaymoney_init()
                 $this->phoneRequired = $this->get_option("phoneRequired");
                 $this->redirectUrl = $this->get_option("redirectUrl");
                 $this->webhookUrl = $this->get_option("webhookUrl");
+                $this->inclusive = $this->get_option("inclusive");
 
                 $this->description = $this->get_option("description");
                 $this->enabled = $this->get_option("enabled");
@@ -203,6 +204,15 @@ function wc_everydaymoney_init()
                         "default" => "yes",
                     ],
 
+                    "inclusive" => [
+                        "title" => "Charges Inclusive",
+                        "label" =>
+                            "Check if you are bearing the cost of transactions",
+                        "type" => "checkbox",
+                        "description" => "",
+                        "default" => "yes",
+                    ],
+
                     "emailRequired" => [
                         "title" => "Make Email Required",
                         "label" => "Enforce Email Validation",
@@ -223,14 +233,13 @@ function wc_everydaymoney_init()
                         "type" => "text",
                         "description" => "We will redirect here when payment is successful",
                         "default" => get_option('siteurl')."/wc-api/everydaymoney_payment",
-                        "disabled" => true,
                         "desc_tip" => true,
                     ],
                     "webhookUrl" => [
                         "title" => "Webhook Endpoint URL",
                         "type" => "text",
+                        "description" => "This ensures that payment is logged even when payment is carried out outside the app",
                         "default" => get_site_url() . "/wc-api/everydaymoney_payment_webhook",
-                        "disabled" => true,
                     ],
                 ];
             }
@@ -312,7 +321,7 @@ function wc_everydaymoney_init()
                     "amount" => floatval($order->get_total()),
                     "currency" => "NGN",
                     "wallet" => "default",
-                    "inclusive" => true,
+                    "inclusive" => $this->inclusive == "yes" ? true : false,
                     "redirectUrl" => $this->redirectUrl,
                     "webhookUrl" => $this->webhookUrl,
                 ];
@@ -441,7 +450,7 @@ function wc_everydaymoney_init()
                         // Alert or show user that  order was canceled
                         // will be best if redirect to order page & notify user that order is complete/err/canceled
                         $order_id = wc_get_order_id_by_order_key(
-                            $body["result"]["result"]["referenceKey"]
+                            $body["result"]["referenceKey"]
                         );
                         $order = wc_get_order($order_id);
                         wc_add_notice(
@@ -451,7 +460,7 @@ function wc_everydaymoney_init()
                         return wp_redirect($this->get_return_url($order));
                     } else {
                         $order_id = wc_get_order_id_by_order_key(
-                            $body["result"]["result"]["referenceKey"]
+                            $body["result"]["referenceKey"]
                         );
                         $order = wc_get_order($order_id);
                         wc_add_notice(
@@ -571,7 +580,7 @@ function everydaymoney_reports_page() {
         return;
     }
     $gateway = new WC_EverydayMoney(); // Create an instance of the gateway class
-    $sales_data = everydaymoney_fetch_sales_reports($gateway->publicKey, $gateway->secretKey, $gateway->testmode, 10);
+    $sales_data = everydaymoney_fetch_sales_reports($gateway->publicKey, $gateway->secretKey, $gateway->testmode, 20);
     // die(var_dump($sales_data[0]->customer));
     ?>
         <?php if(is_array($sales_data)){ ?>
@@ -582,6 +591,7 @@ function everydaymoney_reports_page() {
                     <th>Name</th>
                     <th>Transaction Ref</th>
                     <th>Amount</th>
+                    <th>Settled Amount</th>
                     <th>Status</th>
                     <th>Type</th>
                     <th>Paid Date</th>
@@ -595,7 +605,8 @@ function everydaymoney_reports_page() {
                         <td><?php echo $sale->customer ? $sale->customer->customerKey : "N/A"; ?></td>
                         <td><?php echo $sale->customer && $sale->customer->name != null ? $sale->customer->name : "N/A"; ?></td>
                         <td><?php echo $sale->transactionRef; ?></td>
-                        <td><?php echo $sale->chargesIsInclusive ? number_format($sale->amount / 100, 2) : number_format( ($sale->amount + $sale->serviceCharge + $sale->businessCommission)  / 100, 2); ?></td>
+                        <td><?php echo number_format($sale->amount / 100, 2) ?></td>
+                        <td><?php echo number_format($sale->settledAmount / 100, 2) ?></td>
                         <td><?php echo strtoupper($sale->status); ?></td>
                         <td><?php echo strtoupper($sale->chargeType); ?></td>
                         <td><?php echo $sale->paidAtDate; ?></td>
