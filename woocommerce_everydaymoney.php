@@ -130,6 +130,7 @@ function wc_everydaymoney_init()
                 $this->redirectUrl = $this->get_option("redirectUrl");
                 $this->webhookUrl = $this->get_option("webhookUrl");
                 $this->inclusive = $this->get_option("inclusive");
+                $this->wallet = $this->get_option("wallet");
 
                 $this->description = $this->get_option("description");
                 $this->enabled = $this->get_option("enabled");
@@ -241,6 +242,13 @@ function wc_everydaymoney_init()
                         "description" => "This ensures that payment is logged even when payment is carried out outside the app",
                         "default" => get_site_url() . "/wc-api/everydaymoney_payment_webhook",
                     ],
+                    "wallet" => [
+                        "title" => "Wallet ID",
+                        "type" => "text",
+                        "description" => "Settlement will occur on this wallet",
+                        "default" => "default",
+                        "desc_tip" => true,
+                    ],
                 ];
             }
 
@@ -320,7 +328,7 @@ function wc_everydaymoney_init()
                     "referenceKey" => $order->get_order_key(),
                     "amount" => floatval($order->get_total()),
                     "currency" => "NGN",
-                    "wallet" => "default",
+                    "wallet" => $this->wallet,
                     "inclusive" => $this->inclusive == "yes" ? true : false,
                     "redirectUrl" => $this->redirectUrl,
                     "webhookUrl" => $this->webhookUrl,
